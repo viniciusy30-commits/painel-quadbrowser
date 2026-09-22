@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Painel de Acesso — Quad Browser</title>
+<style>
+  :root {
+    --bg: #0e121c;
+    --card: #161c29;
+    --card-border: #262e40;
+    --text: #eef1f7;
+    --text-dim: #9aa4b8;
+    --accent: #5b8cff;
+    --danger: #ff5c6c;
+    --danger-bg: #3a1b21;
+    --ok: #37c977;
+    --ok-bg: #103324;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --card-border: #e2e6f0;
+      --text: #1b2233;
+      --text-dim: #626b80;
+      --accent: #3b6fe0;
+      --danger: #d43a4a;
+      --danger-bg: #ffe6e8;
+      --ok: #1f9d5c;
+      --ok-bg: #e4f8ee;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e121c;
+    --card: #161c29;
+    --card-border: #262e40;
+    --text: #eef1f7;
+    --text-dim: #9aa4b8;
+    --accent: #5b8cff;
+    --danger: #ff5c6c;
+    --danger-bg: #3a1b21;
+    --ok: #37c977;
+    --ok-bg: #103324;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  body {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 4px 0 4px;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  /* Login screen */
+  #login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    text-align: center;
+  }
+  #login-screen .card {
+    width: 100%;
+    max-width: 340px;
+  }
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 12px 16px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    width: 100%;
+    margin-top: 14px;
+  }
+  .btn-primary:disabled {
+    opacity: 0.6;
+  }
+  #login-error {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+
+  /* Dashboard */
+  #dashboard { display: none; }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .logout-btn {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--card-border);
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  .summary {
+    display: flex;
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .pill {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .pill .num { font-size: 22px; font-weight: 700; }
+  .pill .label { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .device-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .device-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .device-info { min-width: 0; flex: 1; }
+  .device-id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    word-break: break-all;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .device-meta {
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .badge-active { background: var(--ok-bg); color: var(--ok); }
+  .badge-blocked { background: var(--danger-bg); color: var(--danger); }
+  .badge-pending { background: #3a2f10; color: #e8b13a; }
+
+  .toggle-btn {
+    flex-shrink: 0;
+    font-size: 13px;
+    padding: 9px 14px;
+    white-space: nowrap;
+  }
+  .toggle-btn.block { background: var(--danger-bg); color: var(--danger); }
+  .toggle-btn.unblock { background: var(--ok-bg); color: var(--ok); }
+  .toggle-btn.approve { background: var(--ok-bg); color: var(--ok); }
+  .toggle-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .device-model {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .device-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .note-row {
+    margin-top: 10px;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .note-input {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    resize: vertical;
+    min-height: 34px;
+    font-family: inherit;
+  }
+  .note-save-btn {
+    background: var(--accent);
+    color: white;
+    font-size: 12.5px;
+    padding: 8px 12px;
+    flex-shrink: 0;
+  }
+  .note-save-btn:disabled { opacity: 0.5; }
+  .note-saved-hint {
+    font-size: 11px;
+    color: var(--ok);
+    margin-top: 4px;
+    height: 14px;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 60px 20px;
+    font-size: 14px;
+  }
+  .status-msg {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div id="login-screen">
+    <div class="card">
+      <h1>Painel de Acesso</h1>
+      <div class="subtitle">Quad Browser — controle de dispositivos</div>
+      <input id="email" type="email" placeholder="Seu e-mail" autocomplete="username" />
+      <input id="password" type="password" placeholder="Sua senha" autocomplete="current-password" />
+      <button class="btn-primary" id="login-btn">Entrar</button>
+      <div id="login-error"></div>
+    </div>
+  </div>
+
+  <div id="dashboard">
+    <div class="topbar">
+      <div>
+        <h1>Dispositivos</h1>
+        <div class="subtitle" id="admin-email-label"></div>
+      </div>
+      <button class="logout-btn" id="logout-btn">Sair</button>
+    </div>
+
+    <div class="summary">
+      <div class="pill"><div class="num" id="count-total">—</div><div class="label">Total</div></div>
+      <div class="pill"><div class="num" id="count-pending">—</div><div class="label">Pendentes</div></div>
+      <div class="pill"><div class="num" id="count-active">—</div><div class="label">Ativos</div></div>
+      <div class="pill"><div class="num" id="count-blocked">—</div><div class="label">Bloqueados</div></div>
+    </div>
+
+    <div id="device-list"></div>
+    <div id="status-msg" class="status-msg"></div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+  import {
+    getFirestore, collection, onSnapshot, doc, updateDoc, query, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+  // Config from this project's google-services.json (public web config —
+  // safe to expose; access is controlled by Firestore security rules +
+  // requiring a signed-in admin, not by hiding these values).
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfVTZOKLoa9emMsLuT1c9pVCka4--QSTo",
+    projectId: "quadbrowser-acesso",
+    storageBucket: "quadbrowser-acesso.firebasestorage.app",
+    messagingSenderId: "1029834448102",
+    appId: "1:1029834448102:android:e2ddd8d064101c3ae3ef27"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const loginScreen = document.getElementById("login-screen");
+  const dashboard = document.getElementById("dashboard");
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const loginError = document.getElementById("login-error");
+  const deviceList = document.getElementById("device-list");
+  const statusMsg = document.getElementById("status-msg");
+  const adminEmailLabel = document.getElementById("admin-email-label");
+  const countTotal = document.getElementById("count-total");
+  const countPending = document.getElementById("count-pending");
+  const countActive = document.getElementById("count-active");
+  const countBlocked = document.getElementById("count-blocked");
+
+  let unsubscribeDevices = null;
+  const pendingToggles = new Set();
+
+  loginBtn.addEventListener("click", async () => {
+    loginError.textContent = "";
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Entrando...";
+    try {
+      await signInWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
+    } catch (err) {
+      loginError.textContent = "E-mail ou senha incorretos.";
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Entrar";
+    }
+  });
+
+  passwordInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loginBtn.click();
+  });
+
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loginScreen.style.display = "none";
+      dashboard.style.display = "block";
+      adminEmailLabel.textContent = user.email;
+      subscribeToDevices();
+    } else {
+      loginScreen.style.display = "flex";
+      dashboard.style.display = "none";
+      if (unsubscribeDevices) {
+        unsubscribeDevices();
+        unsubscribeDevices = null;
+      }
+    }
+  });
+
+  function formatTimestamp(ts) {
+    if (!ts) return "—";
+    try {
+      const date = ts.toDate();
+      return date.toLocaleString("pt-BR", {
+        day: "2-digit", month: "2-digit", year: "2-digit",
+        hour: "2-digit", minute: "2-digit"
+      });
+    } catch {
+      return "—";
+    }
+  }
+
+  function daysSince(ts) {
+    if (!ts) return null;
+    try {
+      const date = ts.toDate();
+      const diffMs = Date.now() - date.getTime();
+      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      return days < 0 ? 0 : days;
+    } catch {
+      return null;
+    }
+  }
+
+  function formatDaysLabel(days) {
+    if (days === null) return "—";
+    if (days === 0) return "Hoje";
+    if (days === 1) return "1 dia";
+    return days + " dias";
+  }
+
+  function subscribeToDevices() {
+    statusMsg.textContent = "Carregando dispositivos...";
+    const q = query(collection(db, "devices"), orderBy("lastSeen", "desc"));
+
+    unsubscribeDevices = onSnapshot(
+      q,
+      (snapshot) => {
+        statusMsg.textContent = "";
+        renderDevices(snapshot.docs);
+      },
+      (err) => {
+        statusMsg.textContent = "Erro ao carregar dispositivos: " + err.message;
+      }
+    );
+  }
+
+  function renderDevices(docs) {
+    if (docs.length === 0) {
+      deviceList.innerHTML = "";
+      statusMsg.innerHTML = '<div class="empty-state">Nenhum dispositivo registrado ainda.<br>Assim que alguém abrir o app, ele aparece aqui.</div>';
+      countTotal.textContent = "0";
+      countPending.textContent = "0";
+      countActive.textContent = "0";
+      countBlocked.textContent = "0";
+      return;
+    }
+
+    let pending = 0, active = 0, blocked = 0;
+    deviceList.innerHTML = "";
+
+    docs.forEach((docSnap) => {
+      const data = docSnap.data();
+      const id = docSnap.id;
+      const status = data.status === "blocked" ? "blocked" : (data.status === "pending" ? "pending" : "active");
+      if (status === "blocked") blocked++;
+      else if (status === "pending") pending++;
+      else active++;
+
+      const card = document.createElement("div");
+      card.className = "device-card";
+
+      const top = document.createElement("div");
+      top.className = "device-card-top";
+
+      const info = document.createElement("div");
+      info.className = "device-info";
+
+      const modelEl = document.createElement("div");
+      modelEl.className = "device-model";
+      modelEl.textContent = data.deviceModel || "Modelo desconhecido";
+
+      const idEl = document.createElement("div");
+      idEl.className = "device-id";
+      idEl.textContent = id;
+
+      const meta = document.createElement("div");
+      meta.className = "device-meta";
+
+      const badge = document.createElement("span");
+      const badgeClassMap = { blocked: "badge-blocked", pending: "badge-pending", active: "badge-active" };
+      const badgeTextMap = { blocked: "Bloqueado", pending: "Aguardando aprovação", active: "Ativo" };
+      badge.className = "badge " + badgeClassMap[status];
+      badge.textContent = badgeTextMap[status];
+
+      const daysLabel = document.createElement("span");
+      daysLabel.textContent = "Usando há: " + formatDaysLabel(daysSince(data.firstSeen));
+
+      const lastSeen = document.createElement("span");
+      lastSeen.textContent = "Visto: " + formatTimestamp(data.lastSeen);
+
+      meta.appendChild(badge);
+      meta.appendChild(daysLabel);
+      meta.appendChild(lastSeen);
+
+      info.appendChild(modelEl);
+      info.appendChild(idEl);
+      info.appendChild(meta);
+
+      const actions = document.createElement("div");
+      actions.className = "device-actions";
+
+      const isPending = pendingToggles.has(id);
+
+      if (status === "pending") {
+        const approveBtn = document.createElement("button");
+        approveBtn.className = "toggle-btn approve";
+        approveBtn.textContent = isPending ? "..." : "Aprovar";
+        approveBtn.disabled = isPending;
+        approveBtn.addEventListener("click", () => setStatus(id, "active"));
+        actions.appendChild(approveBtn);
+
+        const rejectBtn = document.createElement("button");
+        rejectBtn.className = "toggle-btn block";
+        rejectBtn.textContent = isPending ? "..." : "Bloquear";
+        rejectBtn.disabled = isPending;
+        rejectBtn.addEventListener("click", () => setStatus(id, "blocked"));
+        actions.appendChild(rejectBtn);
+      } else {
+        const toggleBtn = document.createElement("button");
+        toggleBtn.className = "toggle-btn " + (status === "blocked" ? "unblock" : "block");
+        toggleBtn.textContent = isPending ? "..." : (status === "blocked" ? "Desbloquear" : "Bloquear");
+        toggleBtn.disabled = isPending;
+        toggleBtn.addEventListener("click", () => setStatus(id, status === "blocked" ? "active" : "blocked"));
+        actions.appendChild(toggleBtn);
+      }
+
+      top.appendChild(info);
+      top.appendChild(actions);
+      card.appendChild(top);
+
+      // Note row
+      const noteRow = document.createElement("div");
+      noteRow.className = "note-row";
+
+      const noteInput = document.createElement("textarea");
+      noteInput.className = "note-input";
+      noteInput.placeholder = "Anotação sobre este dispositivo...";
+      noteInput.value = data.note || "";
+      noteInput.rows = 1;
+
+      const noteSaveBtn = document.createElement("button");
+      noteSaveBtn.className = "note-save-btn";
+      noteSaveBtn.textContent = "Salvar";
+
+      noteRow.appendChild(noteInput);
+      noteRow.appendChild(noteSaveBtn);
+      card.appendChild(noteRow);
+
+      const noteHint = document.createElement("div");
+      noteHint.className = "note-saved-hint";
+      card.appendChild(noteHint);
+
+      noteSaveBtn.addEventListener("click", () => saveNote(id, noteInput.value, noteSaveBtn, noteHint));
+
+      deviceList.appendChild(card);
+    });
+
+    countTotal.textContent = String(docs.length);
+    countPending.textContent = String(pending);
+    countActive.textContent = String(active);
+    countBlocked.textContent = String(blocked);
+  }
+
+  async function setStatus(deviceId, newStatus) {
+    pendingToggles.add(deviceId);
+    try {
+      const updates = { status: newStatus };
+      if (newStatus === "blocked") {
+        // Resetting firstSeen means the "days in use" count starts over
+        // from zero the next time this device is unblocked and used again.
+        updates.firstSeen = serverTimestamp();
+      }
+      await updateDoc(doc(db, "devices", deviceId), updates);
+    } catch (err) {
+      alert("Não foi possível atualizar: " + err.message);
+    } finally {
+      pendingToggles.delete(deviceId);
+    }
+  }
+
+  async function saveNote(deviceId, noteText, btn, hintEl) {
+    btn.disabled = true;
+    const originalLabel = btn.textContent;
+    btn.textContent = "...";
+    try {
+      await updateDoc(doc(db, "devices", deviceId), { note: noteText });
+      hintEl.textContent = "Salvo!";
+      setTimeout(() => { hintEl.textContent = ""; }, 2000);
+    } catch (err) {
+      alert("Não foi possível salvar a anotação: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+    }
+  }
+</script>
+
+</body>
+</html>
